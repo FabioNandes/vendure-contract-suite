@@ -24,6 +24,10 @@ O `--wait` só retorna quando o Postgres e o server passam no healthcheck e o wo
 A ordem é garantida por `depends_on`. O server cria o schema do banco na inicialização
 (`synchronize`) e só depois o worker sobe. O worker nunca altera o schema.
 
+Os e-mails são gerados pelo worker, na fila `send-email`, e servidos pelo server em `/mailbox`.
+Por isso os dois contêineres montam o mesmo volume, `mailbox`. Sem ele, o e-mail é gerado mas
+nunca aparece para a suíte.
+
 | Endereço                               | O quê                                     |
 | -------------------------------------- | ----------------------------------------- |
 | `http://localhost:3000/shop-api`       | Shop API (GraphQL)                        |

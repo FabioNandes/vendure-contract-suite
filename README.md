@@ -42,14 +42,41 @@ login pela interface em setup de teste; massa criada pela UI.
 ## Progresso
 
 - [x] ESLint, Prettier e TypeScript estrito
-- [x] Workflows de CI (lint + typecheck) e de publicação no GitHub Pages
 - [x] Ambiente Vendure 3.8 com um comando (server, worker, Postgres): cerca de 640 MiB medidos
       ([docs/ambiente.md](docs/ambiente.md))
-- [ ] Fatia vertical carrinho → pedido (contrato → API → banco → UI)
-- [ ] Matriz de autenticação por `storageState` e sharding
-- [ ] `quality-exports/` (`manifest.json`, `scenarios.json`)
+- [x] Fatia vertical carrinho → pedido: contrato → API → banco → worker → UI, 10 execuções
+      completas seguidas sem falha
+- [x] Fábrica de massa via API, com limpeza determinística
+- [x] Matriz de autenticação por `storageState` (guest, customer, admin), sem login pela UI
+- [x] CI com o ambiente completo e relatório de execução publicado no GitHub Pages
+- [x] `quality-exports/` (`manifest.json`, `scenarios.json`), regenerados pelo CI no `main`
+- [ ] Sharding, com tempo antes e depois medido
+- [ ] Camada de API ampliada para os fluxos de maior risco
 - [ ] Relatório de cobertura de schema
 - [ ] Portões visual e de acessibilidade
+
+## Como a suíte está organizada
+
+Os projetos do Playwright seguem a ordem do pipeline, e uma camada só roda se a anterior passou:
+
+| Projeto          | O quê                                                               |
+| ---------------- | ------------------------------------------------------------------- |
+| `contract`       | Schema vivo × snapshot versionado (`contracts/*.snapshot.graphql`)  |
+| `auth`           | Sessão admin criada pela Admin API e salva como `storageState`      |
+| `reference-data` | País, zona, imposto, frete e pagamento, criados via API se faltarem |
+| `api`            | Camada de volume, via `request` do Playwright                       |
+| `ui`             | Funcional magra, com o Dashboard já autenticado pelo `storageState` |
+
+- **Contrato tipado.** As operações da suíte ficam em `contracts/operations/` e os tipos são
+  gerados a partir do snapshot (`npm run codegen`). Se o contrato muda, o teste que depende do
+  campo afetado deixa de compilar.
+- **Erro com HTTP 200.** As mutations do Vendure devolvem uniões (`Order | ErrorResult`). O
+  cliente da suíte falha em qualquer `errors` e obriga cada teste a estreitar a união.
+- **Massa via API, nunca pela UI.** Cada teste cria o que usa e desfaz ao final, em ordem
+  inversa, mesmo se falhar. Pedidos ficam: o Vendure não os apaga, e nenhum teste depende de
+  contagem global.
+- **Perfis.** `guest` usa um contexto sem sessão. `customer` tem uma conta por worker paralelo,
+  porque o carrinho ativo é estado da sessão. `admin` reaproveita a sessão salva pelo setup.
 
 ## Desenvolvimento
 
@@ -61,7 +88,12 @@ npm run check                        # lint + formatação + typecheck
 
 cp .env.example .env                 # preencha as senhas (qualquer valor local)
 docker compose up -d --build --wait  # Vendure em http://localhost:3000
+npx playwright install chromium
+npm test                             # contrato → api → ui
 ```
+
+Depois de uma mudança no Vendure, `npm run contract:snapshot` atualiza o snapshot e os tipos.
+A mudança no snapshot é revisada como qualquer outra: é o contrato.
 
 Endereços, consumo de memória e troubleshooting: [docs/ambiente.md](docs/ambiente.md).
 
