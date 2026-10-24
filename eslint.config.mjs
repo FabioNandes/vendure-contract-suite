@@ -17,6 +17,9 @@ export default defineConfig(
       'test-results/',
       'blob-report/',
       'app/',
+      // Tipos gerados pelo codegen a partir do snapshot.
+      'contracts/generated/',
+      'reports/',
     ],
   },
   js.configs.recommended,
@@ -34,6 +37,11 @@ export default defineConfig(
       'no-restricted-properties': ['error', { property: 'waitForTimeout', message: NO_SLEEP }],
       'no-restricted-imports': ['error', { name: 'node:timers/promises', message: NO_SLEEP }],
     },
+  },
+  {
+    // Fixtures do Playwright sem dependência são declaradas como `async ({}, use) => ...`:
+    // o Playwright lê a desestruturação do primeiro parâmetro para resolver dependências.
+    rules: { 'no-empty-pattern': ['error', { allowObjectPatternsAsParameters: true }] },
   },
   { files: ['**/*.{js,mjs,cjs}'], extends: [tseslint.configs.disableTypeChecked] },
   prettier,

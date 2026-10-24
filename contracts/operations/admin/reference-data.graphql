@@ -1,0 +1,101 @@
+# Dados de referência do checkout: país, zona, imposto, frete e meio de pagamento.
+# Um Vendure recém-criado não tem nenhum deles, e sem zona padrão o canal nem calcula preço.
+
+query ReferenceDataState(
+  $countryCode: String!
+  $zoneName: String!
+  $taxCategoryName: String!
+  $taxRateName: String!
+  $shippingMethodCode: String!
+  $paymentMethodCode: String!
+) {
+  activeChannel {
+    id
+    defaultCurrencyCode
+    defaultTaxZone {
+      id
+    }
+    defaultShippingZone {
+      id
+    }
+  }
+  countries(options: { filter: { code: { eq: $countryCode } } }) {
+    items {
+      id
+    }
+  }
+  zones(options: { filter: { name: { eq: $zoneName } } }) {
+    items {
+      id
+    }
+  }
+  taxCategories(options: { filter: { name: { eq: $taxCategoryName } } }) {
+    items {
+      id
+    }
+  }
+  taxRates(options: { filter: { name: { eq: $taxRateName } } }) {
+    items {
+      id
+    }
+  }
+  shippingMethods(options: { filter: { code: { eq: $shippingMethodCode } } }) {
+    items {
+      id
+    }
+  }
+  paymentMethods(options: { filter: { code: { eq: $paymentMethodCode } } }) {
+    items {
+      id
+    }
+  }
+}
+
+mutation CreateCountry($input: CreateCountryInput!) {
+  createCountry(input: $input) {
+    id
+  }
+}
+
+mutation CreateZone($input: CreateZoneInput!) {
+  createZone(input: $input) {
+    id
+  }
+}
+
+mutation SetChannelDefaultZones($input: UpdateChannelInput!) {
+  updateChannel(input: $input) {
+    __typename
+    ... on Channel {
+      id
+    }
+    ... on ErrorResult {
+      errorCode
+      message
+    }
+  }
+}
+
+mutation CreateTaxCategory($input: CreateTaxCategoryInput!) {
+  createTaxCategory(input: $input) {
+    id
+  }
+}
+
+mutation CreateTaxRate($input: CreateTaxRateInput!) {
+  createTaxRate(input: $input) {
+    id
+  }
+}
+
+mutation CreateShippingMethod($input: CreateShippingMethodInput!) {
+  createShippingMethod(input: $input) {
+    id
+  }
+}
+
+mutation CreatePaymentMethod($input: CreatePaymentMethodInput!) {
+  createPaymentMethod(input: $input) {
+    id
+  }
+}

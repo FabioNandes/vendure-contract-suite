@@ -13,13 +13,26 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "typecheck": "tsc",
-    "check": "npm run lint && npm run format:check && npm run typecheck"
+    "check": "npm run lint && npm run format:check && npm run typecheck",
+    "codegen": "graphql-codegen --config contracts/codegen.ts",
+    "contract:snapshot": "node --env-file-if-exists=.env tools/introspect.ts && npm run codegen",
+    "test": "playwright test",
+    "exports": "node tools/export-scenarios.ts && node tools/export-manifest.ts"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@graphql-codegen/cli": "7.4.6",
+    "@graphql-codegen/typed-document-node": "7.2.0",
+    "@graphql-codegen/typescript": "6.1.2",
+    "@graphql-codegen/typescript-operations": "6.1.10",
+    "@graphql-typed-document-node/core": "3.2.0",
+    "@playwright/test": "1.64.1",
     "@types/node": "^26.6.5",
+    "@types/pg": "8.23.1",
     "eslint": "^10.12.0",
     "eslint-config-prettier": "^10.1.8",
+    "graphql": "16.14.2",
+    "pg": "8.23.1",
     "prettier": "^3.9.10",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.71.2"

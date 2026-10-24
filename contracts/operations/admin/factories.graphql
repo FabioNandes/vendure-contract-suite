@@ -1,0 +1,73 @@
+# Massa criada e removida por teste (fixtures/factories).
+
+mutation AdminLogin($username: String!, $password: String!) {
+  login(username: $username, password: $password) {
+    __typename
+    ... on CurrentUser {
+      id
+      identifier
+    }
+    ... on ErrorResult {
+      errorCode
+      message
+    }
+  }
+}
+
+mutation CreateProduct($input: CreateProductInput!) {
+  createProduct(input: $input) {
+    id
+    slug
+  }
+}
+
+mutation CreateProductVariants($input: [CreateProductVariantInput!]!) {
+  createProductVariants(input: $input) {
+    id
+    sku
+    price
+    priceWithTax
+  }
+}
+
+mutation DeleteProduct($id: ID!) {
+  deleteProduct(id: $id) {
+    result
+    message
+  }
+}
+
+mutation CreateCustomer($input: CreateCustomerInput!, $password: String) {
+  createCustomer(input: $input, password: $password) {
+    __typename
+    ... on Customer {
+      id
+      emailAddress
+    }
+    ... on ErrorResult {
+      errorCode
+      message
+    }
+  }
+}
+
+mutation DeleteCustomer($id: ID!) {
+  deleteCustomer(id: $id) {
+    result
+    message
+  }
+}
+
+query AdminOrderByCode($code: String!) {
+  orders(options: { filter: { code: { eq: $code } } }) {
+    items {
+      id
+      code
+      state
+      totalWithTax
+      customer {
+        emailAddress
+      }
+    }
+  }
+}

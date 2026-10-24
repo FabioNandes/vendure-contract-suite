@@ -6,3 +6,10 @@ blob-report/
 
 # Templates de e-mail do Vendure (MJML + partials do Handlebars) — o Prettier não os entende
 app/static/
+
+# Gerados: snapshots do schema (printSchema) e tipos do codegen
+contracts/*.snapshot.graphql
+contracts/generated/
+reports/
+# Gerado pelo CI a cada execução no main (tools/export-*.ts)
+quality-exports/

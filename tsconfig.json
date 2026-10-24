@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "target": "ES2023",
-    "lib": ["ES2023"],
+    "lib": ["ES2023", "DOM"],
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
     "types": ["node"],
@@ -15,6 +15,10 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
 
+    // Imports relativos com extensão .ts e só sintaxe apagável: os scripts de tools/ rodam com
+    // `node` puro (type stripping do Node 24), sem tsx nem build.
+    "allowImportingTsExtensions": true,
+    "erasableSyntaxOnly": true,
     "verbatimModuleSyntax": true,
     "isolatedModules": true,
     "resolveJsonModule": true,
