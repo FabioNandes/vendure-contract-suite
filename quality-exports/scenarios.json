@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 1,
+  "scenarios": [
+    {
+      "id": "api/shop/checkout.spec.ts:22",
+      "title": "cliente fecha o pedido: pagamento liquidado, estoque reservado e confirmação por e-mail",
+      "tags": [],
+      "riskIds": [],
+      "faultIds": [],
+      "layer": "api",
+      "status": "passed",
+      "durationMs": 675
+    },
+    {
+      "id": "contracts/schema-diff.spec.ts:15 admin API: o schema vivo não quebra o contrato versionado",
+      "title": "admin API: o schema vivo não quebra o contrato versionado",
+      "tags": [],
+      "riskIds": [],
+      "faultIds": [],
+      "layer": "contract",
+      "status": "passed",
+      "durationMs": 633
+    },
+    {
+      "id": "contracts/schema-diff.spec.ts:15 shop API: o schema vivo não quebra o contrato versionado",
+      "title": "shop API: o schema vivo não quebra o contrato versionado",
+      "tags": [],
+      "riskIds": [],
+      "faultIds": [],
+      "layer": "contract",
+      "status": "passed",
+      "durationMs": 529
+    },
+    {
+      "id": "ui/functional/pedido-no-dashboard.spec.ts:11",
+      "title": "pedido pago aparece no Dashboard com código e estado",
+      "tags": [],
+      "riskIds": [],
+      "faultIds": [],
+      "layer": "ui",
+      "status": "passed",
+      "durationMs": 1855
+    }
+  ]
+}

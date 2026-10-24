@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "repo": "vendure-contract-suite",
+  "generatedAt": "2026-10-24T17:36:10.150Z",
+  "commit": "7453f74",
+  "runUrl": "https://github.com/FabioNandes/vendure-contract-suite/actions/runs/40116519551",
+  "reportUrl": "https://fabionandes.github.io/vendure-contract-suite/",
+  "exports": [
+    "scenarios"
+  ]
+}
