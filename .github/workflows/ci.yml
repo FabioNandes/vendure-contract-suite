@@ -1,9 +1,13 @@
 name: CI
 
+# lint → contrato → api → ui → (main) publica o relatório e os quality-exports.
+# Uma camada só roda se a anterior passou: os projetos do Playwright dependem uns dos outros.
+
 on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -27,3 +31,124 @@ jobs:
       - run: npm run lint
       - run: npm run format:check
       - run: npm run typecheck
+      - name: tipos gerados batem com o snapshot do contrato
+        run: |
+          npm run codegen
+          git diff --exit-code contracts/generated/ || {
+            echo "::error::contracts/generated/ está desatualizado. Rode npm run codegen e commite."
+            exit 1
+          }
+
+  e2e:
+    name: contrato → api → ui
+    needs: lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+
+      - name: .env efêmero com segredos aleatórios
+        run: |
+          cp .env.example .env
+          for var in VENDURE_SUPERADMIN_PASSWORD VENDURE_COOKIE_SECRET POSTGRES_PASSWORD; do
+            sed -i "s/^${var}=\$/${var}=$(openssl rand -hex 16)/" .env
+          done
+
+      - uses: docker/setup-buildx-action@v3
+      - name: imagem do Vendure (cache entre execuções)
+        uses: docker/build-push-action@v6
+        with:
+          context: app
+          load: true
+          tags: vendure-contract-suite/vendure:3.8.0
+          cache-from: type=gha,scope=vendure
+          cache-to: type=gha,scope=vendure,mode=max
+
+      - name: sobe o ambiente (server, worker, postgres)
+        run: docker compose up -d --no-build --wait
+
+      - name: cache do navegador do Playwright
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+      - run: npx playwright install --with-deps chromium
+
+      - run: npx playwright test
+
+      - name: quality-exports
+        if: ${{ !cancelled() }}
+        run: npm run exports
+
+      - name: logs do ambiente
+        if: failure()
+        run: docker compose logs --no-color > compose-logs.txt
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: compose-logs
+          path: compose-logs.txt
+          retention-days: 14
+
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 14
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: quality-exports
+          path: quality-exports/
+          retention-days: 14
+
+  publish:
+    name: publica relatório e quality-exports
+    needs: e2e
+    # Publica também quando a suíte falha: o relatório da falha é o que mais precisa ser visto.
+    if: ${{ !cancelled() && github.event_name != 'pull_request' && github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    concurrency:
+      group: publish
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: playwright-report
+          path: site/execucao
+      - name: relatório no gh-pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./site
+          # Preserva o que outros jobs publicaram.
+          keep_files: true
+          commit_message: 'chore(pages): publish report'
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: quality-exports
+          path: quality-exports
+      - name: commit dos quality-exports (bot)
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add quality-exports/
+          if git diff --cached --quiet; then
+            echo 'quality-exports sem mudança'
+            exit 0
+          fi
+          git commit -m 'chore(exports): update quality exports [skip ci]'
+          git pull --rebase origin main
+          git push origin HEAD:main
