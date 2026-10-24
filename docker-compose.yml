@@ -45,6 +45,7 @@ services:
       - 127.0.0.1:3000:3000
     volumes:
       - assets:/app/static/assets
+      - mailbox:/app/static/email/test-emails
     depends_on:
       postgres:
         condition: service_healthy
@@ -66,6 +67,10 @@ services:
     image: vendure-contract-suite/vendure:3.8.0
     command: ['node', 'dist/index-worker.js']
     environment: *vendure-env
+    # Quem gera os e-mails é o worker (fila send-email); quem os serve em /mailbox é o server.
+    # Sem o volume compartilhado o e-mail existe, mas nunca aparece para a suíte.
+    volumes:
+      - mailbox:/app/static/email/test-emails
     # Só sobe depois que o server criou o schema.
     depends_on:
       server:
@@ -74,3 +79,4 @@ services:
 volumes:
   postgres-data:
   assets:
+  mailbox:
