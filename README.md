@@ -43,7 +43,8 @@ login pela interface em setup de teste; massa criada pela UI.
 
 - [x] ESLint, Prettier e TypeScript estrito
 - [x] Workflows de CI (lint + typecheck) e de publicação no GitHub Pages
-- [ ] Ambiente Vendure com um comando, RAM medida
+- [x] Ambiente Vendure 3.8 com um comando (server, worker, Postgres): cerca de 640 MiB medidos
+      ([docs/ambiente.md](docs/ambiente.md))
 - [ ] Fatia vertical carrinho → pedido (contrato → API → banco → UI)
 - [ ] Matriz de autenticação por `storageState` e sharding
 - [ ] `quality-exports/` (`manifest.json`, `scenarios.json`)
@@ -52,12 +53,17 @@ login pela interface em setup de teste; massa criada pela UI.
 
 ## Desenvolvimento
 
-Requer Node 24.
+Requer Node 24 e Docker.
 
 ```sh
 npm ci
-npm run check   # lint + formatação + typecheck
+npm run check                        # lint + formatação + typecheck
+
+cp .env.example .env                 # preencha as senhas (qualquer valor local)
+docker compose up -d --build --wait  # Vendure em http://localhost:3000
 ```
+
+Endereços, consumo de memória e troubleshooting: [docs/ambiente.md](docs/ambiente.md).
 
 ## Relação com os outros repositórios
 
