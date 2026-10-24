@@ -3,3 +3,6 @@ package-lock.json
 playwright-report/
 test-results/
 blob-report/
+
+# Templates de e-mail do Vendure (MJML + partials do Handlebars) — o Prettier não os entende
+app/static/

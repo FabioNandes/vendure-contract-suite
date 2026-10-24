@@ -1,0 +1,76 @@
+# Ambiente do sistema sob teste: Vendure server + worker + Postgres.
+#
+#   cp .env.example .env    # preencha as senhas
+#   docker compose up -d --build --wait
+#   docker compose down -v  # descarta o banco: o próximo `up` começa do zero
+#
+# Consumo de memória medido e troubleshooting: docs/ambiente.md
+name: vendure-contract-suite
+
+x-vendure-env: &vendure-env
+  APP_ENV: dev
+  VENDURE_SERVER_PORT: 3000
+  COOKIE_SECRET: ${VENDURE_COOKIE_SECRET:?defina VENDURE_COOKIE_SECRET no .env}
+  SUPERADMIN_USERNAME: ${VENDURE_SUPERADMIN_USERNAME:?defina VENDURE_SUPERADMIN_USERNAME no .env}
+  SUPERADMIN_PASSWORD: ${VENDURE_SUPERADMIN_PASSWORD:?defina VENDURE_SUPERADMIN_PASSWORD no .env}
+  DB_HOST: postgres
+  DB_PORT: 5432
+  DB_NAME: ${POSTGRES_DB:?defina POSTGRES_DB no .env}
+  DB_USERNAME: ${POSTGRES_USER:?defina POSTGRES_USER no .env}
+  DB_PASSWORD: ${POSTGRES_PASSWORD:?defina POSTGRES_PASSWORD no .env}
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    # Exposto só no host local: a suíte faz asserções direto no banco.
+    ports:
+      - 127.0.0.1:${POSTGRES_PORT:-5432}:5432
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"']
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  server:
+    build: ./app
+    image: vendure-contract-suite/vendure:3.8.0
+    environment: *vendure-env
+    ports:
+      - 127.0.0.1:3000:3000
+    volumes:
+      - assets:/app/static/assets
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://localhost:3000/health').then(r => process.exit(r.ok ? 0 : 1), () => process.exit(1))"
+      interval: 3s
+      timeout: 3s
+      retries: 10
+      # Primeira subida cria o schema inteiro antes de responder.
+      start_period: 120s
+      start_interval: 2s
+
+  worker:
+    build: ./app
+    image: vendure-contract-suite/vendure:3.8.0
+    command: ['node', 'dist/index-worker.js']
+    environment: *vendure-env
+    # Só sobe depois que o server criou o schema.
+    depends_on:
+      server:
+        condition: service_healthy
+
+volumes:
+  postgres-data:
+  assets:
